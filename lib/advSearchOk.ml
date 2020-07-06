@@ -122,7 +122,7 @@ let advanced_search conf base max_answers =
   (* Search type can be AND or OR. *)
   let search_type = gets "search_type" in
   (* Return empty_field_value if the field is empty. Apply function cmp to the field value. *)
-  let apply_to_field_value_raw p x cmp empty_default_value =
+  let apply_to_field_value_raw x cmp empty_default_value =
     let y = gets x in
     if y = "" then empty_default_value
     else cmp y
@@ -146,7 +146,7 @@ let advanced_search conf base max_answers =
     apply_to_field_values_raw p x get cmp empty_default_value
   in
   (* Check if the date matches with the person event. *)
-  let match_date p x df empty_default_value =
+  let match_date x df empty_default_value =
     let (d1, d2) = getd x in
     match d1, d2 with
       | Some (Dgreg (d1, _)), Some (Dgreg (d2, _)) ->
@@ -168,7 +168,7 @@ let advanced_search conf base max_answers =
       | _ -> empty_default_value
   in
   let match_sex p empty_default_value =
-    apply_to_field_value_raw p "sex"
+    apply_to_field_value_raw "sex"
       begin function
         | "M" -> get_sex p = Male
         | "F" -> get_sex p = Female
@@ -207,15 +207,15 @@ let advanced_search conf base max_answers =
     get_event_field_name gets "place" "marriage" search_type
   in
   let match_baptism_date p empty_default_value =
-    match_date p bapt_date_field_name
+    match_date bapt_date_field_name
       (fun () -> Adef.od_of_cdate (get_baptism p)) empty_default_value
   in
   let match_birth_date p empty_default_value =
-    match_date p birth_date_field_name
+    match_date birth_date_field_name
       (fun () -> Adef.od_of_cdate (get_birth p)) empty_default_value
   in
   let match_death_date p empty_default_value =
-    match_date p death_date_field_name
+    match_date death_date_field_name
       (fun () ->
          match get_death p with
            Death (_, cd) -> Some (Adef.date_of_cdate cd)
@@ -223,7 +223,7 @@ let advanced_search conf base max_answers =
       empty_default_value
   in
   let match_burial_date p empty_default_value =
-    match_date p burial_date_field_name
+    match_date burial_date_field_name
       (fun () ->
          match get_burial p with
            Buried cod -> Adef.od_of_cdate cod
@@ -277,7 +277,7 @@ let advanced_search conf base max_answers =
         eq (List.map Name.lower @@ Name.split_sname @@ sou base @@ get_surname p)
   in
   let match_married p empty_default_value =
-    apply_to_field_value_raw p "married"
+    apply_to_field_value_raw "married"
       begin function
         | "Y" -> get_family p <> [| |]
         | "N" -> get_family p = [| |]
