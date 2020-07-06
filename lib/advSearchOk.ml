@@ -121,18 +121,16 @@ let advanced_search conf base max_answers =
   in
   (* Search type can be AND or OR. *)
   let search_type = gets "search_type" in
-  (* Return empty_field_value if the field is empty. Apply function cmp to the field value. Also check the authorization. *)
+  (* Return empty_field_value if the field is empty. Apply function cmp to the field value. *)
   let apply_to_field_value_raw p x cmp empty_default_value =
     let y = gets x in
     if y = "" then empty_default_value
-    else if authorized_age conf base p then cmp y
-    else false
+    else cmp y
   in
   let apply_to_field_value p x get cmp empty_default_value =
     let y = gets x in
     if y = "" then empty_default_value
-    else if authorized_age conf base p then cmp (abbrev_lower y) (abbrev_lower @@ sou base @@ get p)
-    else false
+    else cmp (abbrev_lower y) (abbrev_lower @@ sou base @@ get p)
   in
   let do_compare p y get cmp =
     let s = abbrev_lower @@ get p in
@@ -141,9 +139,7 @@ let advanced_search conf base max_answers =
   let apply_to_field_values_raw p x get cmp empty_default_value =
     let y = getss x in
     if y = [] then empty_default_value
-    else if authorized_age conf base p
-    then do_compare p y get cmp
-    else false
+    else do_compare p y get cmp
   in
   let apply_to_field_values p x get cmp empty_default_value =
     let get p = sou base @@ get p in
@@ -152,8 +148,7 @@ let advanced_search conf base max_answers =
   (* Check if the date matches with the person event. *)
   let match_date p x df empty_default_value =
     let (d1, d2) = getd x in
-    authorized_age conf base p
-    && match d1, d2 with
+    match d1, d2 with
       | Some (Dgreg (d1, _)), Some (Dgreg (d2, _)) ->
         begin match df () with
           | Some (Dgreg (d, _)) ->
@@ -314,13 +309,13 @@ let advanced_search conf base max_answers =
       end
     | Some d1, _ ->
       test_date_place begin fun fam -> match Adef.od_of_cdate (get_marriage fam) with
-        | Some (Dgreg (_, _) as d) when authorized_age conf base p ->
+        | Some (Dgreg (_, _) as d) ->
           if Date.compare_date d d1 < 0 then false else true
         | _ -> false
       end
     | _, Some d2 ->
       test_date_place begin fun fam -> match Adef.od_of_cdate (get_marriage fam) with
-        | Some (Dgreg (_, _) as d) when authorized_age conf base p ->
+        | Some (Dgreg (_, _) as d) ->
           if Date.compare_date d d2 > 0 then false else true
         | _ -> false
       end
@@ -330,7 +325,8 @@ let advanced_search conf base max_answers =
   in
   (* Check the civil status. The test is the same for an AND or a OR search request. *)
   let match_civil_status ~skip_fname ~skip_sname p =
-    match_sex p true
+    authorized_age conf base p
+    && match_sex p true
     && (skip_fname || match_first_name p)
     && (skip_sname || match_surname p)
     && match_married p true
